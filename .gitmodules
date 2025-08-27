@@ -2,3 +2,9 @@
 	path = verl
 	url = https://github.com/agentica-project/verl
 	branch = main
+[submodule "R2E-Gym"]
+	path = R2E-Gym
+	url = https://github.com/R2E-Gym/R2E-Gym.git
+[submodule "SWE-bench"]
+	path = SWE-bench
+	url = https://github.com/SWE-bench/SWE-bench.git
