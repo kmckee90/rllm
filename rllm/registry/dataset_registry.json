@@ -1,0 +1,20 @@
+{
+  "R2E_Gym_Subset": {
+    "train": "/data/users/kevin/AgentShop/rllm/rllm/data/datasets/R2E_Gym_Subset/train.parquet"
+  },
+  "R2E_Gym_Lite": {
+    "train": "/data/users/kevin/AgentShop/rllm/rllm/data/datasets/R2E_Gym_Lite/train.parquet"
+  },
+  "R2E_Gym_V1": {
+    "train": "/data/users/kevin/AgentShop/rllm/rllm/data/datasets/R2E_Gym_V1/train.parquet"
+  },
+  "SWE_Bench_Lite": {
+    "test": "/data/users/kevin/AgentShop/rllm/rllm/data/datasets/SWE_Bench_Lite/test.parquet"
+  },
+  "SWE_Bench_Verified": {
+    "test": "/data/users/kevin/AgentShop/rllm/rllm/data/datasets/SWE_Bench_Verified/test.parquet"
+  },
+  "SweSmith_RL_Dataset": {
+    "train": "/data/users/kevin/AgentShop/rllm/rllm/data/datasets/SweSmith_RL_Dataset/train.parquet"
+  }
+}

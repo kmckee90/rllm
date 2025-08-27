@@ -395,6 +395,40 @@ class AgentPPOTrainer(RayPPOTrainer):
                             actor_output = self.actor_rollout_wg.update_actor(batch)
                         actor_output_metrics = reduce_metrics(actor_output.meta_info["metrics"])
                         metrics.update(actor_output_metrics)
+                        
+                        # # Collect entropy embedding metrics if available
+                        # try:
+                        #     # Access the model through the worker group to get entropy metrics
+                        #     import ray
+                        #     entropy_metrics_futures = []
+                        #     for worker in self.actor_rollout_wg.workers:
+                        #         future = worker.get_entropy_metrics.remote()
+                        #         entropy_metrics_futures.append(future)
+                            
+                        #     # Collect all entropy metrics
+                        #     all_entropy_metrics = ray.get(entropy_metrics_futures)
+                            
+                        #     # Aggregate entropy metrics across workers
+                        #     if any(m for m in all_entropy_metrics if m):  # If any worker has metrics
+                        #         # Combine metrics from all workers
+                        #         combined_entropy_metrics = {}
+                        #         for worker_metrics in all_entropy_metrics:
+                        #             for key, value in worker_metrics.items():
+                        #                 if key not in combined_entropy_metrics:
+                        #                     combined_entropy_metrics[key] = []
+                        #                 combined_entropy_metrics[key].append(value)
+                                
+                        #         # Average the metrics across workers
+                        #         for key, values in combined_entropy_metrics.items():
+                        #             if key == "entropy/application_count":
+                        #                 combined_entropy_metrics[key] = sum(values)  # Sum counts
+                        #             else:
+                        #                 combined_entropy_metrics[key] = sum(values) / len(values)  # Average others
+                                
+                        #         metrics.update(combined_entropy_metrics)
+                        # except Exception as e:
+                        #     print(f"[ENTROPY_DEBUG] Failed to collect entropy metrics: {e}")
+                        #     pass  # Don't fail training if entropy metrics collection fails
 
                     # validate
                     if self.val_reward_fn is not None and self.config.trainer.test_freq > 0 and self.global_steps % self.config.trainer.test_freq == 0:
@@ -658,6 +692,17 @@ class AgentPPOTrainer(RayPPOTrainer):
             if last_valid_idx >= 0 and last_valid_idx < score_batch.shape[1]:
                 score_batch[i, last_valid_idx] = traj_score
 
+
+        # Add entropy tracking to tensor_batch
+        entropy_batch = torch.zeros_like(response_batch, dtype=torch.float32)
+
+        # Extract entropy from trajectories if available
+        for i, traj in enumerate(trajectories):
+            if 'entropy_sequence' in traj:
+                entropy_seq = torch.tensor(traj['entropy_sequence'])
+                # Pad and assign to batch
+                entropy_batch[i, :len(entropy_seq)] = entropy_seq
+                
         tensor_batch = {
             "input_ids": trajectory_batch,
             "attention_mask": attention_mask,
@@ -666,9 +711,11 @@ class AgentPPOTrainer(RayPPOTrainer):
             "prompts": prompts_batch,
             "token_level_scores": score_batch,
             "traj_mask": traj_mask,
+            "past_entropy": entropy_batch,
         }
 
         self.visualize_trajectory(DataProto.from_dict(tensors=tensor_batch))
+
 
         return DataProto.from_dict(tensors=tensor_batch), metrics
 
@@ -863,6 +910,22 @@ class AgentPPOTrainer(RayPPOTrainer):
                 step_index += 1
         assert step_index == score_batch.shape[0], f"Number of total steps used should equal to batch size, but got {step_index} and {score_batch.shape[0]}"
 
+        # Add entropy tracking to tensor_batch
+        entropy_batch = torch.zeros_like(response_batch, dtype=torch.float32)
+
+        # Extract entropy from steps if available
+        step_index = 0
+        for episode in steps:
+            episode_steps = episode["steps"]
+            for step in episode_steps:
+                if 'entropy_sequence' in step:
+                    entropy_seq = torch.tensor(step['entropy_sequence'])
+                    # Pad and assign to batch
+                    entropy_batch[step_index, :len(entropy_seq)] = entropy_seq
+                step_index += 1
+
+                
+
         tensor_batch = {
             "input_ids": complete_step_batch,
             "attention_mask": attention_mask,
@@ -872,6 +935,7 @@ class AgentPPOTrainer(RayPPOTrainer):
             "token_level_scores": score_batch,
             "mc_returns": mc_return_batch,
             "traj_mask": traj_mask,
+            "past_entropy": entropy_batch,
         }
 
         batch_id = str(uuid.uuid4())

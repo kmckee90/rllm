@@ -38,6 +38,8 @@ python3 -m rllm.trainer.verl.train_agent_ppo \
     actor_rollout_ref.actor.ulysses_sequence_parallel_size=8 \
     actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=1 \
     actor_rollout_ref.model.enable_gradient_checkpointing=True \
+    actor_rollout_ref.model.use_entropy_embeddings=True \
+    actor_rollout_ref.model.entropy_embedding_dropout=0.05 \
     actor_rollout_ref.actor.fsdp_config.param_offload=True \
     actor_rollout_ref.actor.fsdp_config.optimizer_offload=True \
     actor_rollout_ref.rollout.tensor_model_parallel_size=8 \
@@ -67,8 +69,8 @@ python3 -m rllm.trainer.verl.train_agent_ppo \
     trainer.default_hdfs_dir=null \
     env.name=swe \
     agent.name=sweagent \
-    agent.max_steps=50 \
+    agent.max_steps=3 \
     agent.overlong_filter=True \
     agent.trajectory_timeout=5400 \
     agent.async_engine=True \
-    trainer.total_epochs=1000
+    trainer.total_epochs=1000 \

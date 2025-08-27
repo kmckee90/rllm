@@ -39,6 +39,8 @@ actor_rollout_ref:
     use_liger: False
     use_fused_kernels: False
     trust_remote_code: False
+    use_entropy_embeddings: False
+    entropy_embedding_dropout: 0.1
   actor:
     strategy: fsdp  # [fsdp, fsdp2], This is for backward-compatibility
     ppo_mini_batch_size: 256
